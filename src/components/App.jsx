@@ -1,76 +1,68 @@
-import React from 'react';
-import { connect } from 'react-redux';
+import React, { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 
 import { CheckboxGroup } from './common';
 import css from './styles.module.css';
 import { filterOptions } from './constants';
-import { TasksSelectors, TasksActionCreators } from '../store';
+import { TasksSelectors } from '../store';
+import { TasksActions } from '../store';
 
 
-class AppOriginal extends React.Component {
-    state = {
-        todoInput: '',
-    }
+export const App = () => {
+    const [todoInput, setTodoInput] = useState('');
+    
+    const tasks = useSelector(TasksSelectors.getTasks);
+    const filter = useSelector(TasksSelectors.getFilters);
+    
+    const dispatch = useDispatch();
 
-    inputChangeHandler = (e) => {
-        this.setState({ todoInput: e.target.value })
-    }
+    const deleteTask = (id) => dispatch(TasksActions.deleteTask(id));
+    const addTask = (task) => dispatch(TasksActions.addTask(task));
+    const toggleTask = (id) => dispatch(TasksActions.toggleTask(id));
+    const changeFilter = (event) => dispatch(TasksActions.changeFilter(event));
 
-    addTaskHandler = () => {
-        this.props.addTask({ todo: this.state.todoInput, isDone: false });
-        }
 
-    toggleCheckbox = (id) => {
-        this.props.toggleTask(id)
-    }
+    const inputChangeHandler = (event) => {
+        setTodoInput(event.target.value)
+    };
 
-    changeFilterHandler = (e) => {
-        this.props.changeFilter(e.target.value);
-    }
+    const addTaskHandler = () => {
+        addTask({ todo: todoInput, isDone: false });
+    };
 
-    render () {
-        const { tasks, filter } = this.props;
-        const { todoInput } = this.state;
-        
-        return (
-            <div className={css.app}>
-                <h1 className={css.title}>Todo App</h1>
-                <form className={css.header}>
-                    <input className={css.todo} value={todoInput} onChange={this.inputChangeHandler}/>
-                    <button className={css.btn} type="button" onClick={this.addTaskHandler}>Добавить задачу</button>
-                </form>
-                <div>
-                    <CheckboxGroup options={filterOptions} value={filter} onChange={this.changeFilterHandler} />
-                </div>
-                <ul className={css.list}>
-                    {tasks.map(({ todo, id, isDone }) => (
-                        <li className={css.item} key={id}>
-                            <input className={css.checkbox} type="checkbox" checked={isDone} onChange={() => {
-                                this.toggleCheckbox(id)
-                            }}/>
-                            {todo}
-                            {isDone && <button className={css.button} onClick={() => {
-                                this.props.deleteTask(id)
-                                }}>Удалить задачу</button>}
-                        </li>
-                    ))}
-                </ul>
+    const toggleCheckbox = (id) => {
+        toggleTask(id)
+    };
+
+    const changeFilterHandler = (event) => {
+        changeFilter(event.target.value);
+    };
+
+    return (
+        <div className={css.app}>
+            <h1 className={css.title}>Todo App</h1>
+            <form className={css.header}>
+                <input className={css.todo} value={todoInput} onChange={inputChangeHandler} />
+                <button className={css.btn} type="button" onClick={addTaskHandler}>Добавить задачу</button>
+            </form>
+            <div>
+                <CheckboxGroup options={filterOptions} value={filter} onChange={changeFilterHandler} />
             </div>
-        );
-    }
+            <ul className={css.list}>
+                {tasks.map(({ todo, id, isDone }) => (
+                    <li className={css.item} key={id}>
+                        <input className={css.checkbox} type="checkbox" checked={isDone} onChange={() => {
+                            toggleCheckbox(id)
+                        }} />
+                        {todo}
+                        {isDone && <button className={css.button} onClick={() => {
+                            deleteTask(id)
+                        }}>Удалить задачу</button>}
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
 }
 
 
-const mapStateToProps = (state) => ({
-    tasks: TasksSelectors.getTasks(state),
-    filter: TasksSelectors.getFilters(state),
-});
-
-const mapDispatchToProps = (dispatch) => ({
-    deleteTask: (id) => dispatch(TasksActionCreators.deleteTask(id)),
-    addTask: (task) => dispatch(TasksActionCreators.addTask(task)),
-    toggleTask: (id) => dispatch(TasksActionCreators.toggleTask(id)),
-    changeFilter: (event) => dispatch(TasksActionCreators.changeFilter(event)),
-})
-
-export const App = connect(mapStateToProps, mapDispatchToProps)(AppOriginal)
